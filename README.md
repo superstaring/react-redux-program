@@ -1,70 +1,98 @@
-# Getting Started with Create React App
+# react-redux
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+### 创建项目
 
-## Available Scripts
+`npx create-react-app react-router-program`
 
-In the project directory, you can run:
+### 安装插件
 
-### `npm start`
+在React中使用Redux，官方要求安装两个其它插件- Redux Toolkit（RTK是一套工具的集合集，简化书写方式）和react-redux。
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+`npm i @reduxjs/toolkit react-redux`
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 使用
 
-### `npm test`
+- counterStore.js 同步使用
+- channelStore.js 异步使用
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+使用Redux Toolkit 创建couterStore
 
-### `npm run build`
+1.创建counterStore.js
+    import { createSlice } from "@reduxjs/toolkit";
+    const counterStore = createSlice({
+        name: 'counter',
+        // 初始化state
+        initialState: {
+            count: 0,
+        },
+        // 修改状态的方法 同步方法 支持直接修改
+        reducers: {
+            increment(state) {
+                state.count++;
+            },
+            decrement(state) {
+                state.count--;
+            },
+            addToNum(state, action) {
+                // payload固定的属性
+                state.count = action.payload;
+            }
+        }
+    })
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+    // 解构出来actionCreater函数
+    const { increment, decrement, addToNum } = counterStore.actions;
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+    // 获取reducer
+    const reducer = counterStore.reducer;
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+    export { increment, decrement, addToNum };
 
-### `npm run eject`
+    export default reducer;
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+2.导出store
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+    import counterReducer from "./modules/counterStore";
+    const store = configureStore({
+        reducer: {
+            counter: counterReducer
+        }
+    })
+    export default store;
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+3.在index.js中添加：
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+    import { Provider } from "react-redux";
+    <Provider store={store}>
+      <App />
+    </Provider>
 
-## Learn More
+4.在App.js中使用：
+   
+    import { decrement, increment, addToNum } from "./store/modules/counterStore";
+    function App() {
+        // useSelector钩子函数
+        const { count } = useSelector((state) => state.counter);
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+        const dispatch = useDispatch();
+        return (
+        <div className="App">
+            <button onClick={() => dispatch(decrement())}>-</button>
+            {count}
+            <button onClick={() => dispatch(increment())}>+</button>
+            <button onClick={() => dispatch(addToNum(10))}>add To 10</button>
+            <button onClick={() => dispatch(addToNum(20))}>add To 20</button>
+        </div>
+        );
+    }
+    export default App;
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### 异步操作样板（如何发布异步请求）
 
-### Code Splitting
+1.创建store的写法保持不变，配置好同步修改状态的方法；
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+2.单独封装一个函数，在函数内部return一个新函数，在新函数中：
+  2.1 封装异步请求获取数据；
+  2.2 调用同步actionCreater传入异步数据生成一个action对象；
 
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+3.组件中dispatch的写法保持不变； 
